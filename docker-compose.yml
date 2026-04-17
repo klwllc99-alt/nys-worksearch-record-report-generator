@@ -1,0 +1,16 @@
+services:
+  api:
+    build:
+      context: ./backend
+    ports:
+      - "8080:8080"
+    environment:
+      ALLOWED_ORIGINS: http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000
+      ADMIN_TOKEN: local-support-token
+      DEFAULT_ADMIN_EMAIL: klwllc99@gmail.com
+      DEFAULT_ADMIN_PASSWORD: 99klwllc
+      METRICS_MAX_EVENTS: "5000"
+    command: uvicorn main:app --host 0.0.0.0 --port 8080 --reload
+    volumes:
+      - ./backend:/app
+      - ./WS5.pdf:/app/static/ws5_blank.pdf:ro

@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+venv/
+node_modules/
+backend/data/
+headers.txt
+sample_*.csv
+*.zip
+*.pdf
+!WS5.pdf
+!backend/static/ws5_blank.pdf

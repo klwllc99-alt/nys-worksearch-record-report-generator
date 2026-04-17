@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Metrics Dashboard</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0f172a;
+      --card: #111827;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-2: #22c55e;
+      --border: #1f2937;
+      --text: #e5eefc;
+      --warn: #f59e0b;
+      --error: #ef4444;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Segoe UI, Arial, sans-serif;
+      background: linear-gradient(180deg, #020617 0%, #0f172a 100%);
+      color: var(--text);
+    }
+    .wrap { max-width: 1400px; margin: 0 auto; padding: 24px; }
+    h1, h2, h3 { margin: 0 0 12px; }
+    .muted { color: var(--muted); }
+    .grid { display: grid; gap: 16px; }
+    .cards { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin: 18px 0 24px; }
+    .panels { grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); }
+    .two-up { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .card, .panel {
+      background: rgba(17, 24, 39, 0.92);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+    .metric { font-size: 1.8rem; font-weight: 700; color: white; }
+    .label { font-size: 0.82rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid #1e293b; font-size: 0.92rem; vertical-align: top; }
+    th { color: #bfdbfe; font-weight: 600; }
+    .bar { height: 10px; background: #1e293b; border-radius: 999px; overflow: hidden; }
+    .bar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+    .toolbar, form {
+      display: flex; flex-wrap: wrap; gap: 12px; align-items: end;
+    }
+    input, select, button {
+      border-radius: 10px; border: 1px solid #334155; background: #0b1220; color: white; padding: 10px 12px;
+    }
+    input, select { min-width: 180px; }
+    button { cursor: pointer; background: #0369a1; border-color: #0284c7; }
+    button.secondary { background: #111827; }
+    .pill { display:inline-block; padding: 4px 8px; border-radius: 999px; background: #082f49; color: #7dd3fc; font-size: 0.8rem; }
+    .note { margin-top: 8px; color: #cbd5e1; }
+    .small { font-size: 0.85rem; }
+    .status { margin-top: 10px; min-height: 20px; }
+    .success { color: #86efac; }
+    .error { color: #fca5a5; }
+    #appShell.hidden, #loginShell.hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Admin / Support Dashboard</h1>
+    <p class="muted">Traffic, performance, and admin-user management for this running instance.</p>
+
+    <section id="loginShell" class="card">
+      <h2>Admin Login</h2>
+      <p class="muted small">Use the seeded admin account to sign in, then create or change additional admin users.</p>
+      <form id="loginForm">
+        <label>
+          Email<br />
+          <input id="loginEmail" type="email" placeholder="Admin email" value="klwllc99@gmail.com" required />
+        </label>
+        <label>
+          Password<br />
+          <input id="loginPassword" type="password" placeholder="Password" required />
+        </label>
+        <button type="submit">Sign in</button>
+      </form>
+      <div id="loginStatus" class="status"></div>
+    </section>
+
+    <section id="appShell" class="hidden">
+      <div class="toolbar card">
+        <div>
+          <div class="label">Signed in as</div>
+          <div id="currentAdmin" class="metric" style="font-size: 1.1rem;"></div>
+        </div>
+        <button id="refreshBtn">Refresh metrics</button>
+        <button id="logoutBtn" class="secondary">Log out</button>
+        <span class="pill">Auto-refresh: 10s</span>
+      </div>
+
+      <div class="grid two-up" style="margin: 16px 0;">
+        <section class="panel">
+          <h3>Create Admin User</h3>
+          <form id="createUserForm">
+            <label>
+              Email<br />
+              <input id="newUserEmail" type="email" placeholder="new-admin@example.com" required />
+            </label>
+            <label>
+              Password<br />
+              <input id="newUserPassword" type="password" placeholder="At least 6 characters" required />
+            </label>
+            <button type="submit">Create user</button>
+          </form>
+          <div id="createUserStatus" class="status"></div>
+        </section>
+
+        <section class="panel">
+          <h3>Change Password</h3>
+          <form id="changePasswordForm">
+            <label>
+              Search users<br />
+              <input id="userSearchInput" type="text" placeholder="Type to filter users" />
+            </label>
+            <label>
+              Select user<br />
+              <select id="changeUserSelect"></select>
+            </label>
+            <label>
+              New password<br />
+              <input id="changeUserPassword" type="password" placeholder="At least 6 characters" required />
+            </label>
+            <button type="submit">Update password</button>
+          </form>
+          <div id="changePasswordStatus" class="status"></div>
+        </section>
+      </div>
+
+      <section class="panel" style="margin-bottom: 16px;">
+        <h2>Admin Users</h2>
+        <div id="userList"></div>
+      </section>
+
+      <div id="summaryCards" class="grid cards"></div>
+
+      <div class="grid panels">
+        <section class="panel">
+          <h2>Traffic Breakdown</h2>
+          <div id="trafficBreakdown"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Performance Breakdown</h2>
+          <div id="performanceBreakdown"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Top IP Addresses</h2>
+          <div id="ipBreakdown"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Region Breakdown</h2>
+          <div id="geoBreakdown"></div>
+        </section>
+
+        <section class="panel" style="grid-column: 1 / -1;">
+          <h2>Recent Requests</h2>
+          <div id="recentRequests"></div>
+        </section>
+      </div>
+    </section>
+
+    <p class="note small">Country and region values come from proxy headers when available, such as Cloudflare or Cloud Run forwarding headers.</p>
+  </div>
+
+  <script>
+    const state = {
+      token: localStorage.getItem('adminToken') || '',
+      email: localStorage.getItem('adminEmail') || '',
+      users: [],
+    };
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
+    }
+
+    function authHeaders() {
+      return state.token ? { 'x-admin-token': state.token } : {};
+    }
+
+    function setStatus(id, message, type = 'success') {
+      const element = document.getElementById(id);
+      element.className = `status ${type}`;
+      element.textContent = message || '';
+    }
+
+    function showShell() {
+      document.getElementById('loginShell').classList.toggle('hidden', Boolean(state.token));
+      document.getElementById('appShell').classList.toggle('hidden', !state.token);
+      document.getElementById('currentAdmin').textContent = state.email || 'Unknown admin';
+    }
+
+    function clearSession() {
+      state.token = '';
+      state.email = '';
+      state.users = [];
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminEmail');
+      showShell();
+    }
+
+    function renderUserDropdown(filterText = '') {
+      const select = document.getElementById('changeUserSelect');
+      const currentValue = select.value;
+      const normalizedFilter = filterText.trim().toLowerCase();
+      const filteredUsers = state.users.filter(user => user.email.toLowerCase().includes(normalizedFilter));
+
+      if (filteredUsers.length === 0) {
+        select.innerHTML = '<option value="">No matching users</option>';
+        select.disabled = true;
+        return;
+      }
+
+      select.disabled = false;
+      select.innerHTML = filteredUsers.map(user => {
+        const isSelected = user.email === currentValue || (!currentValue && user.email === state.email);
+        return `<option value="${escapeHtml(user.email)}" ${isSelected ? 'selected' : ''}>${escapeHtml(user.email)}</option>`;
+      }).join('');
+    }
+
+    async function login(event) {
+      event.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const response = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setStatus('loginStatus', body.detail || 'Login failed.', 'error');
+        return;
+      }
+      state.token = body.token;
+      state.email = body.email;
+      localStorage.setItem('adminToken', state.token);
+      localStorage.setItem('adminEmail', state.email);
+      document.getElementById('loginPassword').value = '';
+      setStatus('loginStatus', 'Signed in successfully.');
+      showShell();
+      await Promise.all([refreshMetrics(), loadUsers()]);
+    }
+
+    function renderCards(summary) {
+      const items = [
+        ['Total Requests', summary.total_requests],
+        ['Unique IPs', summary.unique_ips],
+        ['Requests / Min', summary.requests_per_minute],
+        ['Avg Latency', summary.avg_duration_ms + ' ms'],
+        ['P95 Latency', summary.p95_duration_ms + ' ms'],
+        ['Max Latency', summary.max_duration_ms + ' ms'],
+        ['Uptime', summary.uptime_seconds + ' s'],
+      ];
+      document.getElementById('summaryCards').innerHTML = items.map(([label, value]) => `
+        <div class="card">
+          <div class="label">${escapeHtml(label)}</div>
+          <div class="metric">${escapeHtml(value)}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderBreakdown(targetId, rows, cols) {
+      if (!rows || rows.length === 0) {
+        document.getElementById(targetId).innerHTML = '<p class="muted">No data yet.</p>';
+        return;
+      }
+      const max = Math.max(...rows.map(row => Number(row.count || 0)), 1);
+      const headers = cols.map(col => `<th>${escapeHtml(col.label)}</th>`).join('');
+      const body = rows.map(row => `
+        <tr>
+          ${cols.map(col => `<td>${escapeHtml(row[col.key] ?? '')}</td>`).join('')}
+          <td style="width: 140px;"><div class="bar"><span style="width:${Math.max(8, (Number(row.count || 0) / max) * 100)}%"></span></div></td>
+        </tr>
+      `).join('');
+      document.getElementById(targetId).innerHTML = `<table><thead><tr>${headers}<th>Volume</th></tr></thead><tbody>${body}</tbody></table>`;
+    }
+
+    function renderPerformance(rows) {
+      if (!rows || rows.length === 0) {
+        document.getElementById('performanceBreakdown').innerHTML = '<p class="muted">No performance data yet.</p>';
+        return;
+      }
+      const body = rows.map(row => `
+        <tr>
+          <td>${escapeHtml(row.path)}</td>
+          <td>${escapeHtml(row.count)}</td>
+          <td>${escapeHtml(row.avg_duration_ms)} ms</td>
+          <td>${escapeHtml(row.p95_duration_ms)} ms</td>
+          <td>${escapeHtml(row.max_duration_ms)} ms</td>
+        </tr>
+      `).join('');
+      document.getElementById('performanceBreakdown').innerHTML = `
+        <table>
+          <thead><tr><th>Path</th><th>Hits</th><th>Avg</th><th>P95</th><th>Max</th></tr></thead>
+          <tbody>${body}</tbody>
+        </table>`;
+    }
+
+    function renderRecent(rows) {
+      if (!rows || rows.length === 0) {
+        document.getElementById('recentRequests').innerHTML = '<p class="muted">No requests recorded yet.</p>';
+        return;
+      }
+      const body = rows.map(row => `
+        <tr>
+          <td>${escapeHtml(row.timestamp)}</td>
+          <td>${escapeHtml(row.method)}</td>
+          <td>${escapeHtml(row.path)}</td>
+          <td>${escapeHtml(row.status_code)}</td>
+          <td>${escapeHtml(row.duration_ms)} ms</td>
+          <td>${escapeHtml(row.ip_address)}</td>
+          <td>${escapeHtml(row.country)}</td>
+          <td>${escapeHtml(row.region)}</td>
+          <td>${escapeHtml(row.user_agent)}</td>
+        </tr>
+      `).join('');
+      document.getElementById('recentRequests').innerHTML = `
+        <table>
+          <thead><tr><th>Timestamp</th><th>Method</th><th>Path</th><th>Status</th><th>Latency</th><th>IP</th><th>Country</th><th>Region</th><th>User Agent</th></tr></thead>
+          <tbody>${body}</tbody>
+        </table>`;
+    }
+
+    async function refreshMetrics() {
+      if (!state.token) return;
+      const response = await fetch('/api/admin/metrics/summary', { headers: authHeaders() });
+      if (response.status === 401) {
+        clearSession();
+        setStatus('loginStatus', 'Session expired. Please sign in again.', 'error');
+        return;
+      }
+      const summary = await response.json();
+      renderCards(summary);
+      renderBreakdown('trafficBreakdown', summary.by_method.concat(summary.by_status), [
+        { key: 'label', label: 'Bucket' },
+        { key: 'count', label: 'Count' },
+      ]);
+      renderPerformance(summary.top_paths);
+      renderBreakdown('ipBreakdown', summary.top_ips, [
+        { key: 'ip_address', label: 'IP Address' },
+        { key: 'count', label: 'Count' },
+        { key: 'country', label: 'Country' },
+        { key: 'region', label: 'Region' },
+        { key: 'last_path', label: 'Last Path' },
+      ]);
+      renderBreakdown('geoBreakdown', summary.geo_breakdown, [
+        { key: 'country', label: 'Country' },
+        { key: 'region', label: 'Region' },
+        { key: 'count', label: 'Count' },
+      ]);
+      renderRecent(summary.recent_requests);
+    }
+
+    async function loadUsers() {
+      if (!state.token) return;
+      const response = await fetch('/api/admin/users', { headers: authHeaders() });
+      if (!response.ok) {
+        document.getElementById('userList').innerHTML = '<p class="muted">Unable to load users.</p>';
+        return;
+      }
+      const data = await response.json();
+      const users = data.users || [];
+      state.users = users;
+      renderUserDropdown(document.getElementById('userSearchInput').value || '');
+      if (users.length === 0) {
+        document.getElementById('userList').innerHTML = '<p class="muted">No admin users configured.</p>';
+        return;
+      }
+      const rows = users.map(user => `
+        <tr>
+          <td>${escapeHtml(user.email)}</td>
+          <td>${escapeHtml(user.created_at)}</td>
+        </tr>
+      `).join('');
+      document.getElementById('userList').innerHTML = `<table><thead><tr><th>Email</th><th>Created</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+
+    async function createUser(event) {
+      event.preventDefault();
+      const email = document.getElementById('newUserEmail').value.trim();
+      const password = document.getElementById('newUserPassword').value;
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ email, password }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setStatus('createUserStatus', body.detail || 'Unable to create admin user.', 'error');
+        return;
+      }
+      document.getElementById('newUserEmail').value = '';
+      document.getElementById('newUserPassword').value = '';
+      setStatus('createUserStatus', body.message || 'Admin user created.');
+      await loadUsers();
+    }
+
+    async function changePassword(event) {
+      event.preventDefault();
+      const email = document.getElementById('changeUserSelect').value.trim();
+      const new_password = document.getElementById('changeUserPassword').value;
+      const response = await fetch('/api/admin/users/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ email, new_password }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setStatus('changePasswordStatus', body.detail || 'Unable to update password.', 'error');
+        return;
+      }
+      document.getElementById('changeUserPassword').value = '';
+      setStatus('changePasswordStatus', body.message || 'Password updated.');
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', login);
+    document.getElementById('createUserForm').addEventListener('submit', createUser);
+    document.getElementById('changePasswordForm').addEventListener('submit', changePassword);
+    document.getElementById('userSearchInput').addEventListener('input', event => {
+      renderUserDropdown(event.target.value || '');
+    });
+    document.getElementById('refreshBtn').addEventListener('click', async () => {
+      await Promise.all([refreshMetrics(), loadUsers()]);
+    });
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      clearSession();
+      setStatus('loginStatus', 'Logged out.');
+    });
+
+    showShell();
+    if (state.token) {
+      Promise.all([refreshMetrics(), loadUsers()]);
+    }
+    setInterval(() => {
+      if (state.token) {
+        refreshMetrics();
+      }
+    }, 10000);
+  </script>
+</body>
+</html>

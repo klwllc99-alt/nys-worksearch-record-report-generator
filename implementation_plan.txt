@@ -1,0 +1,177 @@
+# NYS Work Search Record (WS5) PDF Generator — Revised Plan
+
+Build a fully stateless web application that accepts a spreadsheet upload (.xlsx/.csv), collects user metadata, and fills in an official blank WS5 PDF form — either one per week (ZIP) or as a single continuous PDF.
+
+## Architecture Overview (Revised)
+
+```mermaid
+graph LR
+    subgraph Cloudflare Pages
+        FE[Vite + TypeScript Frontend]
+    end
+    subgraph Google Cloud Run
+        API[FastAPI Backend :8080]
+    end
+    FE -- POST /api/generate --> API
+    API -- Filled PDF stream --> FE
+```
+
+> [!IMPORTANT]
+> **Major simplification**: Since we're filling an existing blank PDF form (not rendering HTML→PDF), **Gotenberg is no longer needed**. The backend uses `reportlab` for text overlay and `pypdf` for merging onto the blank form. This eliminates the sidecar container entirely — Cloud Run runs a single container.
+
+---
+
+## Key Design Decisions
+
+1. **PDF Form Filling** — Use the provided blank WS5 PDF as a background. Overlay text at precise coordinates using ReportLab, then merge with pypdf. Works regardless of whether the source PDF has fillable AcroForm fields.
+
+2. **Default vs Full mode**:
+   - **Default**: Fill only the allotted 7 rows per WS5 page per week
+   - **Generate All**: If more than 7 entries exist for a week, create additional overflow pages
+
+3. **Per-week → ZIP download** confirmed. Single → one merged PDF.
+
+4. **NYS DOL seal/logo** included on the form (already present on the blank PDF provided).
+
+5. **Non-data-collection disclaimer** on the UI: *"This application does not collect, store, or transmit any personal data. All processing occurs in-memory and is discarded immediately after your PDF is generated."*
+
+6. **Download links provided**: Input template (XLSX), Input template (CSV), Blank WS5 form PDF.
+
+---
+
+## Proposed Changes
+
+### Backend Service (`/backend`)
+
+#### [NEW] [main.py](file:///c:/Users/kw99f/projects/nys-worksearch-record-report-generator/backend/main.py)
+FastAPI application with endpoints:
+- `POST /api/generate` — accepts `multipart/form-data`:
+  - `file` — uploaded `.xlsx` or `.csv`
+  - `first_name`, `last_name`, `nys_id`, `ssn_last4`
+  - `output_mode` — `"per_week"` or `"single"`
+  - `generate_all` — boolean, default `false` (overflow pages for >7 entries/week)
+- `GET /api/template/csv` — download input template CSV
+- `GET /api/template/xlsx` — download input template XLSX
+- `GET /api/template/ws5` — download blank WS5 form PDF
+- CORS middleware configured for Cloudflare Pages origin
+
+#### [NEW] [parser.py](file:///c:/Users/kw99f/projects/nys-worksearch-record-report-generator/backend/parser.py)
+Spreadsheet parsing:
+- Auto-detect by extension
+- Normalize headers (case-insensitive, strip whitespace)
+- Parse dates, validate required columns
+- Group records by week (Sunday end-date)
+- Return structured data
+
+#### [NEW] [pdf_generator.py](file:///c:/Users/kw99f/projects/nys-worksearch-record-report-generator/backend/pdf_generator.py)
+PDF form filling pipeline:
+- Load blank WS5 PDF via pypdf
+- Create text overlay at precise coordinates via ReportLab canvas
+- Fill claimant info (name, NYS ID, SSN last 4, week ending date)
+- Fill activity rows (up to 7 per page)
+- If `generate_all` and >7 entries: create additional pages
+- For `per_week`: return ZIP of individual PDFs
+- For `single`: merge all weeks into one PDF via pypdf
+
+#### [NEW] [static/ws5_blank.pdf](file:///c:/Users/kw99f/projects/nys-worksearch-record-report-generator/backend/static/ws5_blank.pdf)
+User-provided blank WS5 form (placeholder until provided).
+
+#### [NEW] [static/ws5_template.csv](file:///c:/Users/kw99f/projects/nys-worksearch-record-report-generator/backend/static/ws5_template.csv)
+#### [NEW] [static/ws5_template.xlsx](file:///c:/Users/kw99f/projects/nys-worksearch-record-report-generator/backend/static/ws5_template.xlsx)
+Input templates with correct headers.
+
+#### [NEW] [requirements.txt](file:///c:/Users/kw99f/projects/nys-worksearch-record-report-generator/backend/requirements.txt)
+```
+fastapi==0.115.12
+uvicorn==0.34.2
+python-multipart==0.0.20
+openpyxl==3.1.5
+reportlab==4.4.0
+pypdf==5.4.0
+```
+
+#### [NEW] [Dockerfile](file:///c:/Users/kw99f/projects/nys-worksearch-record-report-generator/backend/Dockerfile)
+Single-container — no sidecar needed.
+
+---
+
+### Frontend Application (`/frontend`)
+
+#### [NEW] Vite + TypeScript project (vanilla-ts template)
+
+Single-page minimalist design with:
+- Drag-and-drop file upload zone (.xlsx/.csv)
+- Form fields: First Name, Last Name, NYS ID #, Last 4 SSN
+- Output mode toggle: Per Week (ZIP) / Single PDF
+- "Generate All Activities" checkbox
+- Download buttons: Input Template (CSV), Input Template (XLSX), Blank WS5 Form
+- Non-data-collection privacy disclaimer
+- Progress indicator during generation
+- Dark slate + blue accent color palette, Inter font, glassmorphism card, micro-animations
+
+---
+
+### Cloud Run Service Definition
+
+#### [NEW] [cloud-run-service.yaml](file:///c:/Users/kw99f/projects/nys-worksearch-record-report-generator/cloud-run-service.yaml)
+Single-container deployment (no sidecar):
+```yaml
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: nys-ws5-generator
+spec:
+  template:
+    spec:
+      containers:
+        - name: api
+          image: APP_IMAGE_PLACEHOLDER
+          ports:
+            - containerPort: 8080
+          resources:
+            limits:
+              memory: 512Mi
+              cpu: "1"
+```
+
+---
+
+### CI/CD Pipeline
+
+#### [NEW] [.github/workflows/deploy.yml](file:///c:/Users/kw99f/projects/nys-worksearch-record-report-generator/.github/workflows/deploy.yml)
+
+**Job 1: `deploy-backend`** — Build → push to Artifact Registry → deploy to Cloud Run
+**Job 2: `deploy-frontend`** — Build Vite → deploy to Cloudflare Pages (create new project)
+
+Uses project name `nys-worksearch-record-report-generator` for GCP resources.
+Default Cloud Run and Cloudflare Pages URLs (no custom domain).
+
+---
+
+### Docker Compose (Local Dev)
+
+#### [NEW] [docker-compose.yml](file:///c:/Users/kw99f/projects/nys-worksearch-record-report-generator/docker-compose.yml)
+Single service for the API backend, exposed on port 8080.
+
+---
+
+## Verification Plan
+
+### Local Development
+```bash
+# Backend
+docker compose up
+# Frontend
+cd frontend && npm run dev
+```
+
+### Automated Tests
+- Unit tests for parser (CSV/XLSX parsing, column validation, weekly grouping)
+- Integration test: upload sample data → verify PDF output is non-empty, correct page count
+
+### Manual Verification
+- Upload sample spreadsheet, verify filled PDF matches WS5 layout
+- Test both output modes (per-week ZIP, single PDF)
+- Test generate-all overflow with >7 entries per week
+- Verify template downloads work
+- Mobile responsive check

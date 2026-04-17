@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NYS Work Search Form Generator</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #020617;
+      --card: rgba(15, 23, 42, 0.92);
+      --border: #1e293b;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent2: #22c55e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Segoe UI, Arial, sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at top, #0f172a, var(--bg));
+    }
+    .wrap { max-width: 1300px; margin: 0 auto; padding: 24px; }
+    .hero, .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+    }
+    .hero { margin-bottom: 18px; }
+    h1, h2, h3 { margin-top: 0; }
+    p { color: var(--muted); }
+    .grid { display: grid; gap: 16px; }
+    .two { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    label { display: block; font-size: 0.95rem; margin-bottom: 4px; }
+    input, select, button {
+      width: 100%;
+      padding: 11px 12px;
+      border-radius: 12px;
+      border: 1px solid #334155;
+      background: #0b1220;
+      color: white;
+      margin-top: 6px;
+    }
+    button {
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border: none;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button.secondary {
+      background: #0b1220;
+      border: 1px solid #334155;
+    }
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .links a {
+      color: #bfdbfe;
+      text-decoration: none;
+      border: 1px solid #334155;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: #0b1220;
+    }
+    .dropzone {
+      border: 2px dashed #475569;
+      border-radius: 14px;
+      padding: 18px;
+      text-align: center;
+      color: var(--muted);
+    }
+    .inline { display: flex; align-items: center; gap: 8px; }
+    .inline input[type='checkbox'] { width: auto; margin: 0; }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .actions > * {
+      width: auto;
+      min-width: 180px;
+    }
+    .status {
+      margin-top: 12px;
+      min-height: 22px;
+      font-size: 0.95rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: none;
+    }
+    .status.success {
+      display: block;
+      color: #86efac;
+      background: rgba(20, 83, 45, 0.35);
+      border: 1px solid rgba(34, 197, 94, 0.4);
+    }
+    .status.error {
+      display: block;
+      color: #fecaca;
+      background: rgba(127, 29, 29, 0.35);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+    .small { font-size: 0.88rem; }
+    .tableWrap {
+      overflow: auto;
+      border: 1px solid #1e293b;
+      border-radius: 14px;
+      margin-top: 12px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1050px;
+    }
+    th, td {
+      border-bottom: 1px solid #1e293b;
+      padding: 8px;
+      vertical-align: top;
+    }
+    th {
+      position: sticky;
+      top: 0;
+      background: #0b1220;
+      color: #bfdbfe;
+      text-align: left;
+    }
+    td input, td select, td textarea {
+      margin-top: 0;
+      min-width: 120px;
+      padding: 8px 10px;
+    }
+    td textarea {
+      min-height: 72px;
+      resize: vertical;
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid #334155;
+      background: #0b1220;
+      color: white;
+      font-family: inherit;
+    }
+    .clearableField {
+      display: flex;
+      align-items: stretch;
+      gap: 6px;
+      min-width: 160px;
+    }
+    .clearableField input {
+      flex: 1;
+    }
+    .clearValueBtn {
+      width: 38px;
+      min-width: 38px;
+      padding: 8px 0;
+      margin-top: 0;
+      border-radius: 10px;
+      background: #1f2937;
+      border: 1px solid #475569;
+      color: #cbd5e1;
+      font-size: 18px;
+      line-height: 1;
+    }
+    .summaryBox {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 10px;
+      color: #cbd5e1;
+    }
+    .sortTools {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 10px;
+    }
+    .sortTools button {
+      width: auto;
+      min-width: 120px;
+    }
+    .sortHeaderBtn {
+      width: 100%;
+      margin-top: 0;
+      padding: 0;
+      text-align: left;
+      background: transparent;
+      border: none;
+      color: #bfdbfe;
+      font-weight: 700;
+      border-radius: 0;
+    }
+    .sortHeaderBtn:hover {
+      color: #dbeafe;
+      text-decoration: underline;
+    }
+    .summaryBox span {
+      background: #0b1220;
+      border: 1px solid #334155;
+      padding: 6px 10px;
+      border-radius: 999px;
+    }
+    .previewSection {
+      display: none;
+    }
+    .previewSection.visible {
+      display: block;
+    }
+    .pastePanel {
+      display: none;
+      margin-top: 14px;
+      padding: 14px;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      background: #09101d;
+    }
+    .pastePanel.visible {
+      display: block;
+    }
+    .pastePanel textarea {
+      width: 100%;
+      min-height: 140px;
+      resize: vertical;
+      margin-top: 8px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid #334155;
+      background: #020617;
+      color: white;
+    }
+    .previewBody {
+      width: 100%;
+      min-height: 180px;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      background: #0b1220;
+      margin-top: 12px;
+      padding: 12px;
+    }
+    .previewCanvasWrap {
+      margin-bottom: 16px;
+      overflow: auto;
+      border-radius: 10px;
+      background: #111827;
+      padding: 8px;
+    }
+    .previewCanvasWrap canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: white;
+      border-radius: 8px;
+    }
+    .previewFallback {
+      margin-top: 10px;
+      color: #bfdbfe;
+    }
+    .previewFallback a {
+      color: #93c5fd;
+    }
+    .busyOverlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(2, 6, 23, 0.76);
+      z-index: 9999;
+      backdrop-filter: blur(3px);
+    }
+    .busyOverlay.visible {
+      display: flex;
+    }
+    .busyCard {
+      width: min(420px, 100%);
+      padding: 22px 20px;
+      border-radius: 16px;
+      border: 1px solid #334155;
+      background: #0b1220;
+      text-align: center;
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.4);
+    }
+    .busySpinner {
+      width: 42px;
+      height: 42px;
+      margin: 0 auto 12px;
+      border-radius: 50%;
+      border: 4px solid rgba(148, 163, 184, 0.25);
+      border-top-color: #60a5fa;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <h1>NYS Work Search Record Generator</h1>
+      <p>Select or drop a CSV or XLSX file and it will load into the editor automatically. You can then correct rows inline, paste from the clipboard, or add entries manually before generating the WS5 form. The grid labels now mirror the official WS5 wording.</p>
+      <p class="small"><strong>Privacy notice:</strong> This application does not collect, store, or transmit personal data beyond the active request. Processing is done in memory for generation.</p>
+      <div class="links">
+        <a href="/api/template/csv">Download CSV template</a>
+        <a href="/api/template/xlsx">Download XLSX template</a>
+        <a href="/api/template/ws5">Download blank WS5 form</a>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Claimant details</h2>
+      <form id="generatorForm">
+        <div class="grid two">
+          <label>First name
+            <input id="firstName" name="first_name" placeholder="Optional" />
+          </label>
+          <label>Last name
+            <input id="lastName" name="last_name" placeholder="Optional" />
+          </label>
+          <label>NYS ID
+            <input id="nysId" name="nys_id" placeholder="Optional" />
+          </label>
+          <label>SSN last 4
+            <input id="ssnLast4" name="ssn_last4" maxlength="4" placeholder="Optional" />
+          </label>
+          <label>Output mode
+            <select id="outputMode" name="output_mode">
+              <option value="single" selected>Single merged PDF</option>
+              <option value="per_week">Per week ZIP</option>
+            </select>
+          </label>
+          <label>Choose CSV/XLSX file
+            <input id="fileInput" type="file" name="file" accept=".csv,.xlsx" />
+          </label>
+        </div>
+
+        <div class="dropzone" id="dropzone">
+          Drag and drop a CSV or XLSX file here. The data will load into the editable grid below.
+        </div>
+
+        <label class="inline" style="margin-top: 14px;">
+          <input id="generateAll" type="checkbox" name="generate_all" />
+          <span>Generate all activities, including overflow pages beyond the first WS5 page</span>
+        </label>
+
+        <div class="actions">
+          <button type="button" id="addRowBtn" class="secondary">Add new item</button>
+          <button type="button" id="pasteBtn" class="secondary">Paste from clipboard</button>
+          <button type="button" id="clearRowsBtn" class="secondary">Clear rows</button>
+          <button type="button" id="previewBtn">Preview PDF</button>
+          <button type="submit">Generate download</button>
+        </div>
+        <div id="pastePanel" class="pastePanel">
+          <strong>Paste spreadsheet rows here</strong>
+          <p class="small">If direct clipboard access is blocked, click in the box below and press Ctrl+V, then import the rows.</p>
+          <textarea id="pasteTextarea" placeholder="Paste CSV or tab-separated rows here..."></textarea>
+          <div class="actions" style="margin-top: 10px;">
+            <button type="button" id="importPasteBtn">Import pasted data</button>
+            <button type="button" id="closePasteBtn" class="secondary">Close paste box</button>
+          </div>
+        </div>
+        <div id="status" class="status"></div>
+      </form>
+    </section>
+
+    <section class="card" style="margin-top: 18px;">
+      <h2>Work Search Record grid</h2>
+      <p class="small">Businesses/Employers Contacted and Other Work Search Activities can be corrected inline, pasted from the clipboard, or added manually. Click a column heading to sort the grid, and click it again to reverse the order.</p>
+      <div id="gridSummary" class="summaryBox"></div>
+      <div class="sortTools">
+        <button type="button" id="resetSortBtn" class="secondary">Reset sort</button>
+      </div>
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th><button type="button" class="sortHeaderBtn" data-sort-key="date">Date of contact / activity</button></th>
+              <th><button type="button" class="sortHeaderBtn" data-sort-key="position_or_activity">Position applied for / Activity performed</button></th>
+              <th><button type="button" class="sortHeaderBtn" data-sort-key="business_name">Business/Employer name</button></th>
+              <th><button type="button" class="sortHeaderBtn" data-sort-key="person_contacted">Name and title of person contacted</button></th>
+              <th><button type="button" class="sortHeaderBtn" data-sort-key="method_of_contact">Method of contact</button></th>
+              <th><button type="button" class="sortHeaderBtn" data-sort-key="contact_information">Contact information</button></th>
+              <th><button type="button" class="sortHeaderBtn" data-sort-key="result">Result of contact</button></th>
+              <th><button type="button" class="sortHeaderBtn" data-sort-key="record_type">WS5 section</button></th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="gridBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="previewSection" class="card previewSection" style="margin-top: 18px;">
+      <h2>Inline PDF preview</h2>
+      <p class="small">Use Preview PDF to render the current edited data directly below.</p>
+      <div id="previewBody" class="previewBody">Preview will appear here after you click Preview PDF.</div>
+      <div id="previewFallback" class="previewFallback" style="display:none;">
+        If the preview does not render, <a id="previewDownloadLink" href="#" target="_blank" rel="noopener">open the PDF directly</a>.
+      </div>
+    </section>
+  </div>
+
+  <div id="busyOverlay" class="busyOverlay" aria-live="polite" aria-busy="true">
+    <div class="busyCard">
+      <div class="busySpinner"></div>
+      <strong id="busyMessage">Working on your PDF...</strong>
+      <p class="small">Please wait until the current action finishes.</p>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    const form = document.getElementById('generatorForm');
+    const fileInput = document.getElementById('fileInput');
+    const dropzone = document.getElementById('dropzone');
+    const statusEl = document.getElementById('status');
+    const gridBody = document.getElementById('gridBody');
+    const gridSummary = document.getElementById('gridSummary');
+    const pastePanel = document.getElementById('pastePanel');
+    const pasteTextarea = document.getElementById('pasteTextarea');
+    const previewSection = document.getElementById('previewSection');
+    const previewBody = document.getElementById('previewBody');
+    const previewFallback = document.getElementById('previewFallback');
+    const previewDownloadLink = document.getElementById('previewDownloadLink');
+    const busyOverlay = document.getElementById('busyOverlay');
+    const busyMessage = document.getElementById('busyMessage');
+    const resetSortBtn = document.getElementById('resetSortBtn');
+
+    const columns = [
+      { key: 'date', label: 'Date of contact / activity' },
+      { key: 'position_or_activity', label: 'Position applied for / Activity performed' },
+      { key: 'business_name', label: 'Business/Employer name' },
+      { key: 'person_contacted', label: 'Name and title of person contacted' },
+      { key: 'method_of_contact', label: 'Method of contact' },
+      { key: 'contact_information', label: 'Contact information' },
+      { key: 'result', label: 'Result of contact' },
+      { key: 'record_type', label: 'WS5 section' },
+    ];
+
+    const exportHeaders = [
+      'Date',
+      'Position Applied / Activity',
+      'Business/Employer Name',
+      'Person Contacted / Title',
+      'Method of Contact',
+      'Contact Information',
+      'Result',
+      'Record Type',
+    ];
+
+    const state = {
+      rows: [],
+      previewUrl: '',
+      isBusy: false,
+      sortKey: '',
+      sortDirection: 'asc',
+      methodOptions: ['In person', 'Phone', 'Fax', 'Email', 'Web site', 'Other'],
+      resultOptions: ['Interview', 'Waiting for response', 'Not hired', 'Other'],
+    };
+
+    function normalizeOptions(values) {
+      const seen = new Set();
+      return (values || [])
+        .map(value => String(value ?? '').replace(/\s+/g, ' ').trim())
+        .filter(Boolean)
+        .filter(value => {
+          const key = value.toLowerCase();
+          if (seen.has(key)) {
+            return false;
+          }
+          seen.add(key);
+          return true;
+        });
+    }
+
+    function mergeOptions(...groups) {
+      return normalizeOptions(groups.flat());
+    }
+
+    function renderOptionLists() {
+      const methodOptionsList = document.getElementById('methodOptions');
+      const resultOptionsList = document.getElementById('resultOptions');
+      if (!methodOptionsList || !resultOptionsList) {
+        return;
+      }
+      methodOptionsList.innerHTML = state.methodOptions.map(value => `<option value="${escapeHtml(value)}"></option>`).join('');
+      resultOptionsList.innerHTML = state.resultOptions.map(value => `<option value="${escapeHtml(value)}"></option>`).join('');
+    }
+
+    async function loadWs5Metadata() {
+      try {
+        const response = await fetch('/api/template/ws5-metadata');
+        const payload = await response.json();
+        state.methodOptions = mergeOptions(state.methodOptions, payload.method_options || [], ['Other']);
+        state.resultOptions = mergeOptions(state.resultOptions, payload.result_options || [], ['Other']);
+      } catch {
+        state.methodOptions = mergeOptions(state.methodOptions, ['Other']);
+        state.resultOptions = mergeOptions(state.resultOptions, ['Other']);
+      }
+      renderOptionLists();
+      renderGrid();
+    }
+
+    function blankRow() {
+      return {
+        date: '',
+        position_or_activity: '',
+        business_name: '',
+        person_contacted: '',
+        method_of_contact: '',
+        contact_information: '',
+        result: '',
+        record_type: 'employer_contact',
+      };
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;');
+    }
+
+    function getSortIndicator(key) {
+      if (state.sortKey !== key) {
+        return '';
+      }
+      return state.sortDirection === 'asc' ? ' ↑' : ' ↓';
+    }
+
+    function updateSortHeaders() {
+      document.querySelectorAll('.sortHeaderBtn').forEach(button => {
+        const key = button.dataset.sortKey;
+        const column = columns.find(item => item.key === key);
+        if (!column) {
+          return;
+        }
+        button.textContent = column.label + getSortIndicator(key);
+      });
+    }
+
+    function compareSortValues(left, right, key) {
+      const a = String(left?.[key] ?? '').trim();
+      const b = String(right?.[key] ?? '').trim();
+      if (key === 'date') {
+        const leftDate = a ? Date.parse(a) : Number.NEGATIVE_INFINITY;
+        const rightDate = b ? Date.parse(b) : Number.NEGATIVE_INFINITY;
+        return leftDate - rightDate;
+      }
+      return a.localeCompare(b, undefined, { sensitivity: 'base', numeric: true });
+    }
+
+    function getSortedRows() {
+      const indexedRows = state.rows.map((row, originalIndex) => ({ row, originalIndex }));
+      if (!state.sortKey) {
+        return indexedRows;
+      }
+      return [...indexedRows].sort((left, right) => {
+        const comparison = compareSortValues(left.row, right.row, state.sortKey);
+        return state.sortDirection === 'asc' ? comparison : -comparison;
+      });
+    }
+
+    function toggleSort(key) {
+      if (state.sortKey === key) {
+        state.sortDirection = state.sortDirection === 'asc' ? 'desc' : 'asc';
+      } else {
+        state.sortKey = key;
+        state.sortDirection = 'asc';
+      }
+      renderGrid();
+      const column = columns.find(item => item.key === key);
+      setStatus(`Sorted by ${column?.label || key} (${state.sortDirection}).`);
+    }
+
+    function resetSort() {
+      state.sortKey = '';
+      state.sortDirection = 'asc';
+      renderGrid();
+      setStatus('Grid sort reset.');
+    }
+
+    function setStatus(message = '', type = 'success') {
+      statusEl.className = 'status ' + type;
+      statusEl.textContent = message;
+      statusEl.style.display = message ? 'block' : 'none';
+    }
+
+    function setBusy(isBusy, message = 'Working on your PDF...') {
+      state.isBusy = isBusy;
+      if (busyOverlay) {
+        busyOverlay.classList.toggle('visible', isBusy);
+      }
+      if (busyMessage) {
+        busyMessage.textContent = message;
+      }
+      document.querySelectorAll('button, input, select, textarea').forEach(element => {
+        element.disabled = isBusy;
+      });
+    }
+
+    function updateSummary() {
+      const employerCount = state.rows.filter(row => row.record_type !== 'other_activity').length;
+      const otherCount = state.rows.filter(row => row.record_type === 'other_activity').length;
+      gridSummary.innerHTML = `
+        <span>Total rows: ${state.rows.length}</span>
+        <span>Employer contacts: ${employerCount}</span>
+        <span>Other activities: ${otherCount}</span>
+      `;
+    }
+
+    function renderGrid() {
+      updateSortHeaders();
+      if (state.rows.length === 0) {
+        gridBody.innerHTML = '<tr><td colspan="9" style="color:#94a3b8;">No items yet. Load a file, paste rows, or add new items manually.</td></tr>';
+        updateSummary();
+        return;
+      }
+
+      const disabledAttr = state.isBusy ? 'disabled' : '';
+      const sortedRows = getSortedRows();
+
+      gridBody.innerHTML = sortedRows.map(({ row, originalIndex }) => `
+        <tr>
+          <td><input type="date" data-index="${originalIndex}" data-key="date" value="${escapeHtml(row.date)}" ${disabledAttr} /></td>
+          <td><input data-index="${originalIndex}" data-key="position_or_activity" value="${escapeHtml(row.position_or_activity)}" ${disabledAttr} /></td>
+          <td><input data-index="${originalIndex}" data-key="business_name" value="${escapeHtml(row.business_name)}" ${disabledAttr} /></td>
+          <td><input data-index="${originalIndex}" data-key="person_contacted" value="${escapeHtml(row.person_contacted)}" ${disabledAttr} /></td>
+          <td>
+            <div class="clearableField">
+              <input list="methodOptions" data-index="${originalIndex}" data-key="method_of_contact" value="${escapeHtml(row.method_of_contact)}" placeholder="Select or type" ${disabledAttr} />
+              <button type="button" class="secondary clearValueBtn" data-clear="method_of_contact" data-index="${originalIndex}" title="Clear value" aria-label="Clear value" ${disabledAttr}>×</button>
+            </div>
+          </td>
+          <td><textarea data-index="${originalIndex}" data-key="contact_information" ${disabledAttr}>${escapeHtml(row.contact_information)}</textarea></td>
+          <td>
+            <div class="clearableField">
+              <input list="resultOptions" data-index="${originalIndex}" data-key="result" value="${escapeHtml(row.result)}" placeholder="Select or type" ${disabledAttr} />
+              <button type="button" class="secondary clearValueBtn" data-clear="result" data-index="${originalIndex}" title="Clear value" aria-label="Clear value" ${disabledAttr}>×</button>
+            </div>
+          </td>
+          <td>
+            <select data-index="${originalIndex}" data-key="record_type" ${disabledAttr}>
+              <option value="employer_contact" ${row.record_type === 'employer_contact' ? 'selected' : ''}>Employer contact</option>
+              <option value="other_activity" ${row.record_type === 'other_activity' ? 'selected' : ''}>Other activity</option>
+            </select>
+          </td>
+          <td><button type="button" class="secondary" data-remove="${originalIndex}" ${disabledAttr}>Remove</button></td>
+        </tr>
+      `).join('');
+      updateSummary();
+    }
+
+    function normalizeClipboardRows(text) {
+      const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+      if (!lines.length) return [];
+      const delimiter = lines.some(line => line.includes('\t')) ? '\t' : ',';
+      const rows = lines.map(line => line.split(delimiter).map(cell => cell.trim()));
+      const firstRow = rows[0].map(cell => cell.toLowerCase());
+      const hasHeader = firstRow.some(cell => cell.includes('date') || cell.includes('position') || cell.includes('activity'));
+      const dataRows = hasHeader ? rows.slice(1) : rows;
+
+      return dataRows.map(cells => ({
+        date: cells[0] || '',
+        position_or_activity: cells[1] || '',
+        business_name: cells[2] || '',
+        person_contacted: cells[3] || '',
+        method_of_contact: cells[4] || '',
+        contact_information: cells[5] || '',
+        result: cells[6] || '',
+        record_type: cells[7] || ((cells[2] || cells[3] || cells[4] || cells[5] || cells[6]) ? 'employer_contact' : 'other_activity'),
+      }));
+    }
+
+    async function loadSelectedFile() {
+      if (!fileInput.files.length) {
+        setStatus('Choose a CSV or XLSX file first, or add rows manually.', 'error');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+      setStatus('Loading file into the grid...');
+      const response = await fetch('/api/parse', { method: 'POST', body: formData });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setStatus(payload.message || 'Unable to load the file.', 'error');
+        return;
+      }
+      state.rows = payload.rows || [];
+      renderGrid();
+      setStatus(`Loaded ${state.rows.length} row(s) into the grid.`);
+    }
+
+    function addRow() {
+      state.rows.push(blankRow());
+      renderGrid();
+      setStatus('Added a blank row.');
+    }
+
+    function importPastedText(text) {
+      const newRows = normalizeClipboardRows(text);
+      if (!newRows.length) {
+        setStatus('No table data was found in the pasted content.', 'error');
+        return false;
+      }
+      state.rows.push(...newRows);
+      renderGrid();
+      setStatus(`Pasted ${newRows.length} row(s) from the clipboard.`);
+      pastePanel.classList.remove('visible');
+      pasteTextarea.value = '';
+      return true;
+    }
+
+    async function pasteFromClipboard() {
+      pastePanel.classList.add('visible');
+      pasteTextarea.focus();
+      pasteTextarea.select();
+
+      if (!navigator.clipboard || !navigator.clipboard.readText) {
+        setStatus('Press Ctrl+V in the paste box, then click Import pasted data.', 'success');
+        return;
+      }
+
+      try {
+        const text = await navigator.clipboard.readText();
+        if (text && text.trim()) {
+          pasteTextarea.value = text;
+          importPastedText(text);
+          return;
+        }
+      } catch {
+        // Fallback to manual paste below.
+      }
+
+      setStatus('Paste access was blocked. Click in the paste box, press Ctrl+V, then click Import pasted data.', 'success');
+    }
+
+    function clearRows() {
+      state.rows = [];
+      renderGrid();
+      setStatus('Cleared all rows.');
+    }
+
+    function buildCsvBlob() {
+      if (!state.rows.length) {
+        return null;
+      }
+      const header = exportHeaders.join(',');
+      const escapeCsv = value => '"' + String(value ?? '').replaceAll('"', '""') + '"';
+      const body = state.rows.map(row => [
+        row.date,
+        row.position_or_activity,
+        row.business_name,
+        row.person_contacted,
+        row.method_of_contact,
+        row.contact_information,
+        row.result,
+        row.record_type,
+      ].map(escapeCsv).join(',')).join('\n');
+      return new Blob([header + '\n' + body], { type: 'text/csv' });
+    }
+
+    async function renderPdfPreview(url) {
+      previewSection.classList.add('visible');
+      previewBody.innerHTML = 'Rendering preview...';
+      previewFallback.style.display = 'block';
+      previewDownloadLink.href = url;
+
+      if (!window.pdfjsLib) {
+        previewBody.innerHTML = 'Inline PDF rendering is unavailable in this browser.';
+        return;
+      }
+
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+      try {
+        const pdf = await pdfjsLib.getDocument(url).promise;
+        previewBody.innerHTML = '';
+        for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+          const page = await pdf.getPage(pageNumber);
+          const viewport = page.getViewport({ scale: 1.35 });
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          const wrapper = document.createElement('div');
+          wrapper.className = 'previewCanvasWrap';
+          wrapper.appendChild(canvas);
+          previewBody.appendChild(wrapper);
+          await page.render({ canvasContext: context, viewport }).promise;
+        }
+      } catch (error) {
+        console.error(error);
+        previewBody.innerHTML = 'Unable to render the inline preview here. Use the link below to open the PDF directly.';
+      }
+    }
+
+    async function submitGeneration(mode = 'download') {
+      if (state.isBusy) {
+        return;
+      }
+
+      setStatus('');
+      if (!state.rows.length) {
+        setStatus('Load a CSV/XLSX file, paste rows, or add items manually before generating.', 'error');
+        return;
+      }
+
+      const csvBlob = buildCsvBlob();
+      const formData = new FormData();
+      formData.append('file', csvBlob, 'edited_work_search.csv');
+      formData.append('first_name', document.getElementById('firstName').value.trim());
+      formData.append('last_name', document.getElementById('lastName').value.trim());
+      formData.append('nys_id', document.getElementById('nysId').value.trim());
+      formData.append('ssn_last4', document.getElementById('ssnLast4').value.trim());
+      formData.append('output_mode', mode === 'preview' ? 'single' : document.getElementById('outputMode').value);
+      formData.append('generate_all', document.getElementById('generateAll').checked ? 'true' : 'false');
+
+      const workingMessage = mode === 'preview' ? 'Preparing PDF preview...' : 'Generating your download...';
+      setStatus(workingMessage);
+      setBusy(true, workingMessage);
+
+      try {
+        const response = await fetch('/api/generate', { method: 'POST', body: formData });
+        if (!response.ok) {
+          let message = 'Unable to generate the form right now.';
+          try {
+            const payload = await response.json();
+            message = payload.message || payload.detail || message;
+          } catch {
+            const text = await response.text();
+            if (text) {
+              message = text;
+            }
+          }
+          setStatus(message, 'error');
+          return;
+        }
+
+        const blob = await response.blob();
+        const disposition = response.headers.get('Content-Disposition') || '';
+        const match = disposition.match(/filename="?([^";]+)"?/i);
+        const filename = match ? match[1] : 'ws5-output';
+        const url = URL.createObjectURL(blob);
+
+        if (mode === 'preview') {
+          if (state.previewUrl) {
+            URL.revokeObjectURL(state.previewUrl);
+          }
+          state.previewUrl = url;
+          await renderPdfPreview(state.previewUrl);
+          previewSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          setStatus('Preview updated below.');
+          return;
+        }
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setStatus('Generation complete. Your download should start automatically.');
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+      } catch {
+        setStatus('The PDF request could not be completed right now. Please try again.', 'error');
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    ;['dragenter', 'dragover'].forEach(eventName => {
+      dropzone.addEventListener(eventName, event => {
+        event.preventDefault();
+        dropzone.style.borderColor = '#60a5fa';
+      });
+    });
+
+    ;['dragleave', 'drop'].forEach(eventName => {
+      dropzone.addEventListener(eventName, event => {
+        event.preventDefault();
+        dropzone.style.borderColor = '#475569';
+      });
+    });
+
+    dropzone.addEventListener('drop', event => {
+      const files = event.dataTransfer.files;
+      if (files && files.length > 0) {
+        fileInput.files = files;
+        loadSelectedFile();
+      }
+    });
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length) {
+        loadSelectedFile();
+      }
+    });
+
+    gridBody.addEventListener('input', event => {
+      const index = Number(event.target.dataset.index);
+      const key = event.target.dataset.key;
+      if (Number.isNaN(index) || !key || !state.rows[index]) {
+        return;
+      }
+      state.rows[index][key] = event.target.value;
+      updateSummary();
+    });
+
+    gridBody.addEventListener('click', event => {
+      const clearKey = event.target.dataset.clear;
+      if (clearKey !== undefined) {
+        const index = Number(event.target.dataset.index);
+        if (!Number.isNaN(index) && state.rows[index]) {
+          state.rows[index][clearKey] = '';
+          renderGrid();
+          setStatus('Value cleared.');
+        }
+        return;
+      }
+
+      const removeIndex = event.target.dataset.remove;
+      if (removeIndex === undefined) {
+        return;
+      }
+      state.rows.splice(Number(removeIndex), 1);
+      renderGrid();
+      setStatus('Row removed.');
+    });
+
+    document.getElementById('addRowBtn').addEventListener('click', addRow);
+    document.getElementById('pasteBtn').addEventListener('click', pasteFromClipboard);
+    resetSortBtn.addEventListener('click', resetSort);
+    document.querySelectorAll('.sortHeaderBtn').forEach(button => {
+      button.addEventListener('click', () => toggleSort(button.dataset.sortKey));
+    });
+    document.getElementById('importPasteBtn').addEventListener('click', () => importPastedText(pasteTextarea.value));
+    document.getElementById('closePasteBtn').addEventListener('click', () => pastePanel.classList.remove('visible'));
+    pasteTextarea.addEventListener('paste', event => {
+      const pastedText = event.clipboardData?.getData('text') || '';
+      if (pastedText.trim()) {
+        setTimeout(() => importPastedText(pastedText), 0);
+      }
+    });
+    document.getElementById('clearRowsBtn').addEventListener('click', clearRows);
+    document.getElementById('previewBtn').addEventListener('click', () => submitGeneration('preview'));
+
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
+      await submitGeneration('download');
+    });
+
+    renderGrid();
+    loadWs5Metadata();
+  </script>
+  <datalist id="methodOptions"></datalist>
+  <datalist id="resultOptions"></datalist>
+</body>
+</html>
