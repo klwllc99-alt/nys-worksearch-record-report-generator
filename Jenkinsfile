@@ -54,7 +54,7 @@ pipeline {
                           -e DEFAULT_ADMIN_EMAIL=klwllc99@gmail.com \
                           -e DEFAULT_ADMIN_PASSWORD=99klwllc \
                           -e METRICS_MAX_EVENTS=5000 \
-                          -v \"$WORKSPACE/WS5.pdf:/app/static/ws5_blank.pdf:ro\" \
+                          -v \"\$WORKSPACE/WS5.pdf:/app/static/ws5_blank.pdf:ro\" \
                           ${IMAGE_NAME}:${BUILD_NUMBER}
                         """.stripIndent(),
                         """
@@ -71,24 +71,24 @@ pipeline {
 
                     runCmd(
                         """
-                        for i in $(seq 1 30); do
+                        for i in \$(seq 1 30); do
                           curl -fsS http://127.0.0.1:${CI_PORT}/api/health && exit 0
                           sleep 2
                         done
                         exit 1
                         """.stripIndent(),
                         """
-                        powershell -NoProfile -Command "$ok=$false; for($i=0; $i -lt 30; $i++){ try { $r = Invoke-WebRequest -UseBasicParsing http://127.0.0.1:%CI_PORT%/api/health; if($r.StatusCode -eq 200){ $ok=$true; break } } catch {}; Start-Sleep -Seconds 2 }; if(-not $ok){ exit 1 }"
+                        powershell -NoProfile -Command "\$ok=\$false; for(\$i=0; \$i -lt 30; \$i++){ try { \$r = Invoke-WebRequest -UseBasicParsing http://127.0.0.1:%CI_PORT%/api/health; if(\$r.StatusCode -eq 200){ \$ok=\$true; break } } catch {}; Start-Sleep -Seconds 2 }; if(-not \$ok){ exit 1 }"
                         """.stripIndent()
                     )
 
                     runCmd(
                         """
-                        status=$(curl -s -o generated.pdf -w '%{http_code}' -F 'file=@backend/official_sample.csv' -F 'output_mode=single' http://127.0.0.1:${CI_PORT}/api/generate)
-                        test "$status" = "200"
+                        status=\$(curl -s -o generated.pdf -w '%{http_code}' -F 'file=@backend/official_sample.csv' -F 'output_mode=single' http://127.0.0.1:${CI_PORT}/api/generate)
+                        test "\$status" = "200"
                         """.stripIndent(),
                         """
-                        powershell -NoProfile -Command "$status = & curl.exe -s -o generated.pdf -w '%{http_code}' -F 'file=@backend/official_sample.csv' -F 'output_mode=single' http://127.0.0.1:%CI_PORT%/api/generate; if($status -ne '200'){ exit 1 }"
+                        powershell -NoProfile -Command "\$status = & curl.exe -s -o generated.pdf -w '%{http_code}' -F 'file=@backend/official_sample.csv' -F 'output_mode=single' http://127.0.0.1:%CI_PORT%/api/generate; if(\$status -ne '200'){ exit 1 }"
                         """.stripIndent()
                     )
                 }
