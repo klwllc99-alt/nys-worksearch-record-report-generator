@@ -99,7 +99,7 @@ pipeline {
                         runCmd(
                             """
                             for i in \$(seq 1 30); do
-                              curl -fsS http://127.0.0.1:\$CI_PORT/api/health && exit 0
+                              docker exec \$CONTAINER_NAME python -c "import sys, urllib.request; sys.exit(0) if urllib.request.urlopen('http://127.0.0.1:8080/api/health', timeout=5).status == 200 else sys.exit(1)" && exit 0
                               sleep 2
                             done
                             exit 1
@@ -111,8 +111,27 @@ pipeline {
 
                         runCmd(
                             """
-                            status=\$(curl -s -o generated.pdf -w '%{http_code}' -F 'file=@backend/official_sample.csv' -F 'output_mode=single' http://127.0.0.1:\$CI_PORT/api/generate)
-                            test "\$status" = "200"
+                            docker exec \$CONTAINER_NAME python - <<'PY'
+import sys
+import uuid
+import urllib.request
+
+boundary = uuid.uuid4().hex
+with open('/app/official_sample.csv', 'rb') as source:
+    file_data = source.read()
+parts = [
+    f'--{boundary}\r\nContent-Disposition: form-data; name="output_mode"\r\n\r\nsingle\r\n'.encode(),
+    f'--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="official_sample.csv"\r\nContent-Type: text/csv\r\n\r\n'.encode() + file_data + b'\r\n',
+    f'--{boundary}--\r\n'.encode(),
+]
+request = urllib.request.Request(
+    'http://127.0.0.1:8080/api/generate',
+    data=b''.join(parts),
+    headers={'Content-Type': f'multipart/form-data; boundary={boundary}'},
+)
+with urllib.request.urlopen(request, timeout=60) as response:
+    sys.exit(0 if response.status == 200 else 1)
+PY
                             """.stripIndent(),
                             """
                             powershell -NoProfile -Command "\$status = & curl.exe -s -o generated.pdf -w '%{http_code}' -F 'file=@backend/official_sample.csv' -F 'output_mode=single' http://127.0.0.1:%CI_PORT%/api/generate; if(\$status -ne '200'){ exit 1 }"
