@@ -8,6 +8,8 @@ venv/
 node_modules/
 backend/data/
 headers.txt
+admin_login.json
+jenkins-job-config.xml
 sample_*.csv
 *.zip
 *.pdf

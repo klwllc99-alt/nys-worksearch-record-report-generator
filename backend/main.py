@@ -11,7 +11,7 @@ from pypdf import PdfReader
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, StreamingResponse
 from openpyxl import Workbook
 from pydantic import BaseModel
 
@@ -226,6 +226,11 @@ async def parse_upload(file: UploadFile = File(...)):
         rows.extend(entry_to_row(entry) for entry in entries)
 
     return JSONResponse({"rows": rows, "count": len(rows)})
+
+
+@app.api_route("/admin", methods=["GET", "HEAD"])
+def admin_root():
+    return RedirectResponse(url="/admin/dashboard", status_code=307)
 
 
 @app.get("/admin/dashboard")

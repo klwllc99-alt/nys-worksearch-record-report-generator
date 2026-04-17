@@ -70,7 +70,7 @@
 
     <section id="loginShell" class="card">
       <h2>Admin Login</h2>
-      <p class="muted small">Use the seeded admin account to sign in, then create or change additional admin users.</p>
+      <p class="muted small">Use the seeded local admin account to sign in, then create or change additional admin users. Expired local sessions are cleared automatically.</p>
       <form id="loginForm">
         <label>
           Email<br />
@@ -190,6 +190,10 @@
       return state.token ? { 'x-admin-token': state.token } : {};
     }
 
+    function getApiMessage(body, fallback) {
+      return body?.message || body?.detail || fallback;
+    }
+
     function setStatus(id, message, type = 'success') {
       const element = document.getElementById(id);
       element.className = `status ${type}`;
@@ -241,7 +245,7 @@
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) {
-        setStatus('loginStatus', body.detail || 'Login failed.', 'error');
+        setStatus('loginStatus', getApiMessage(body, 'Login failed.'), 'error');
         return;
       }
       state.token = body.token;
@@ -399,7 +403,7 @@
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) {
-        setStatus('createUserStatus', body.detail || 'Unable to create admin user.', 'error');
+        setStatus('createUserStatus', getApiMessage(body, 'Unable to create admin user.'), 'error');
         return;
       }
       document.getElementById('newUserEmail').value = '';
@@ -419,7 +423,7 @@
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) {
-        setStatus('changePasswordStatus', body.detail || 'Unable to update password.', 'error');
+        setStatus('changePasswordStatus', getApiMessage(body, 'Unable to update password.'), 'error');
         return;
       }
       document.getElementById('changeUserPassword').value = '';
@@ -440,10 +444,27 @@
       setStatus('loginStatus', 'Logged out.');
     });
 
-    showShell();
-    if (state.token) {
-      Promise.all([refreshMetrics(), loadUsers()]);
+    async function bootstrapAdmin() {
+      showShell();
+      if (!state.token) {
+        return;
+      }
+
+      const response = await fetch('/api/admin/session', { headers: authHeaders() });
+      if (!response.ok) {
+        clearSession();
+        setStatus('loginStatus', 'Previous local admin session expired. Please sign in again.', 'error');
+        return;
+      }
+
+      const session = await response.json().catch(() => ({}));
+      state.email = session.email || state.email;
+      localStorage.setItem('adminEmail', state.email);
+      showShell();
+      await Promise.all([refreshMetrics(), loadUsers()]);
     }
+
+    bootstrapAdmin();
     setInterval(() => {
       if (state.token) {
         refreshMetrics();
