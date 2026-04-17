@@ -20,7 +20,9 @@ pipeline {
 
     environment {
         IMAGE_NAME = 'nys-worksearch-record-report-generator'
-        CONTAINER_NAME = "nys-worksearch-record-generator-${env.BUILD_NUMBER}"
+        SAFE_BRANCH = 'local'
+        IMAGE_TAG = 'local-0'
+        CONTAINER_NAME = 'nys-worksearch-record-generator-local-0'
         CI_PORT = '8081'
         DEPLOY_WITH_COMPOSE = "${env.DEPLOY_WITH_COMPOSE ?: 'false'}"
     }
@@ -32,12 +34,29 @@ pipeline {
             }
         }
 
+        stage('Prepare CI Context') {
+            steps {
+                script {
+                    env.SAFE_BRANCH = (env.BRANCH_NAME ?: 'local').replaceAll(/[^A-Za-z0-9_.-]/, '-')
+                    env.IMAGE_TAG = "${env.SAFE_BRANCH}-${env.BUILD_NUMBER}"
+                    env.CONTAINER_NAME = "nys-worksearch-record-generator-${env.SAFE_BRANCH}-${env.BUILD_NUMBER}"
+                    env.CI_PORT = (8000 + Math.abs((env.JOB_NAME ?: env.SAFE_BRANCH).hashCode() % 500)).toString()
+                }
+            }
+        }
+
         stage('Build Docker image') {
             steps {
                 script {
                     runCmd(
-                        "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} backend",
-                        "docker build -t %IMAGE_NAME%:%BUILD_NUMBER% backend"
+                        """
+                        docker image rm -f ${IMAGE_NAME}:${IMAGE_TAG} >/dev/null 2>&1 || true
+                        docker build --pull -t ${IMAGE_NAME}:${IMAGE_TAG} backend
+                        """.stripIndent(),
+                        """
+                        docker image rm -f %IMAGE_NAME%:%IMAGE_TAG% 1>nul 2>nul
+                        docker build --pull -t %IMAGE_NAME%:%IMAGE_TAG% backend
+                        """.stripIndent()
                     )
                 }
             }
@@ -50,22 +69,24 @@ pipeline {
                         """
                         docker rm -f ${CONTAINER_NAME} >/dev/null 2>&1 || true
                         docker run -d --name ${CONTAINER_NAME} -p ${CI_PORT}:8080 \
+                          --label ci.branch=${SAFE_BRANCH} \
                           -e ADMIN_TOKEN=local-support-token \
                           -e DEFAULT_ADMIN_EMAIL=klwllc99@gmail.com \
                           -e DEFAULT_ADMIN_PASSWORD=99klwllc \
                           -e METRICS_MAX_EVENTS=5000 \
                           -v \"\$WORKSPACE/WS5.pdf:/app/static/ws5_blank.pdf:ro\" \
-                          ${IMAGE_NAME}:${BUILD_NUMBER}
+                          ${IMAGE_NAME}:${IMAGE_TAG}
                         """.stripIndent(),
                         """
                         docker rm -f %CONTAINER_NAME% 1>nul 2>nul
                         docker run -d --name %CONTAINER_NAME% -p %CI_PORT%:8080 ^
+                          --label ci.branch=%SAFE_BRANCH% ^
                           -e ADMIN_TOKEN=local-support-token ^
                           -e DEFAULT_ADMIN_EMAIL=klwllc99@gmail.com ^
                           -e DEFAULT_ADMIN_PASSWORD=99klwllc ^
                           -e METRICS_MAX_EVENTS=5000 ^
                           -v "%WORKSPACE%\\WS5.pdf:/app/static/ws5_blank.pdf:ro" ^
-                          %IMAGE_NAME%:%BUILD_NUMBER%
+                          %IMAGE_NAME%:%IMAGE_TAG%
                         """.stripIndent()
                     )
 
@@ -122,8 +143,14 @@ pipeline {
         always {
             script {
                 runCmd(
-                    "docker rm -f ${CONTAINER_NAME} >/dev/null 2>&1 || true",
-                    'docker rm -f %CONTAINER_NAME% 1>nul 2>nul'
+                    """
+                    docker rm -f ${CONTAINER_NAME} >/dev/null 2>&1 || true
+                    docker image rm -f ${IMAGE_NAME}:${IMAGE_TAG} >/dev/null 2>&1 || true
+                    """.stripIndent(),
+                    """
+                    docker rm -f %CONTAINER_NAME% 1>nul 2>nul
+                    docker image rm -f %IMAGE_NAME%:%IMAGE_TAG% 1>nul 2>nul
+                    """.stripIndent()
                 )
             }
         }
