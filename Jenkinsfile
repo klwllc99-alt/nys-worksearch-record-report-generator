@@ -50,8 +50,8 @@ pipeline {
                 script {
                     runCmd(
                         """
-                        docker image rm -f ${IMAGE_NAME}:${IMAGE_TAG} >/dev/null 2>&1 || true
-                        docker build --pull -t ${IMAGE_NAME}:${IMAGE_TAG} backend
+                        docker image rm -f ${env.IMAGE_NAME}:${env.IMAGE_TAG} >/dev/null 2>&1 || true
+                        docker build --pull -t ${env.IMAGE_NAME}:${env.IMAGE_TAG} backend
                         """.stripIndent(),
                         """
                         docker image rm -f %IMAGE_NAME%:%IMAGE_TAG% 1>nul 2>nul
@@ -67,15 +67,14 @@ pipeline {
                 script {
                     runCmd(
                         """
-                        docker rm -f ${CONTAINER_NAME} >/dev/null 2>&1 || true
-                        docker run -d --name ${CONTAINER_NAME} -p ${CI_PORT}:8080 \
-                          --label ci.branch=${SAFE_BRANCH} \
+                        docker rm -f ${env.CONTAINER_NAME} >/dev/null 2>&1 || true
+                        docker run -d --name ${env.CONTAINER_NAME} -p ${env.CI_PORT}:8080 \
+                          --label ci.branch=${env.SAFE_BRANCH} \
                           -e ADMIN_TOKEN=local-support-token \
                           -e DEFAULT_ADMIN_EMAIL=klwllc99@gmail.com \
                           -e DEFAULT_ADMIN_PASSWORD=99klwllc \
                           -e METRICS_MAX_EVENTS=5000 \
-                          -v \"\$WORKSPACE/WS5.pdf:/app/static/ws5_blank.pdf:ro\" \
-                          ${IMAGE_NAME}:${IMAGE_TAG}
+                          ${env.IMAGE_NAME}:${env.IMAGE_TAG}
                         """.stripIndent(),
                         """
                         docker rm -f %CONTAINER_NAME% 1>nul 2>nul
@@ -85,7 +84,6 @@ pipeline {
                           -e DEFAULT_ADMIN_EMAIL=klwllc99@gmail.com ^
                           -e DEFAULT_ADMIN_PASSWORD=99klwllc ^
                           -e METRICS_MAX_EVENTS=5000 ^
-                          -v "%WORKSPACE%\\WS5.pdf:/app/static/ws5_blank.pdf:ro" ^
                           %IMAGE_NAME%:%IMAGE_TAG%
                         """.stripIndent()
                     )
@@ -93,7 +91,7 @@ pipeline {
                     runCmd(
                         """
                         for i in \$(seq 1 30); do
-                          curl -fsS http://127.0.0.1:${CI_PORT}/api/health && exit 0
+                          curl -fsS http://127.0.0.1:${env.CI_PORT}/api/health && exit 0
                           sleep 2
                         done
                         exit 1
@@ -105,7 +103,7 @@ pipeline {
 
                     runCmd(
                         """
-                        status=\$(curl -s -o generated.pdf -w '%{http_code}' -F 'file=@backend/official_sample.csv' -F 'output_mode=single' http://127.0.0.1:${CI_PORT}/api/generate)
+                        status=\$(curl -s -o generated.pdf -w '%{http_code}' -F 'file=@backend/official_sample.csv' -F 'output_mode=single' http://127.0.0.1:${env.CI_PORT}/api/generate)
                         test "\$status" = "200"
                         """.stripIndent(),
                         """
@@ -144,8 +142,8 @@ pipeline {
             script {
                 runCmd(
                     """
-                    docker rm -f ${CONTAINER_NAME} >/dev/null 2>&1 || true
-                    docker image rm -f ${IMAGE_NAME}:${IMAGE_TAG} >/dev/null 2>&1 || true
+                    docker rm -f ${env.CONTAINER_NAME} >/dev/null 2>&1 || true
+                    docker image rm -f ${env.IMAGE_NAME}:${env.IMAGE_TAG} >/dev/null 2>&1 || true
                     """.stripIndent(),
                     """
                     docker rm -f %CONTAINER_NAME% 1>nul 2>nul
