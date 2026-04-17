@@ -20,21 +20,41 @@ class AdminAuthStore:
         self.storage_path.parent.mkdir(parents=True, exist_ok=True)
         self._ensure_seeded()
 
+    def _build_default_user(self, created_at: str | None = None) -> dict[str, Any]:
+        return {
+            "email": self.default_email,
+            "password_hash": self._hash_password(self.default_password),
+            "created_at": created_at or datetime.now(timezone.utc).isoformat(),
+        }
+
+    def _ensure_default_user_record(self, users: list[dict[str, Any]]) -> bool:
+        changed = False
+        for user in users:
+            if user.get("email", "").strip().lower() == self.default_email:
+                user["email"] = self.default_email
+                if not user.get("created_at"):
+                    user["created_at"] = datetime.now(timezone.utc).isoformat()
+                    changed = True
+                stored_hash = user.get("password_hash", "")
+                if not self._verify_password(self.default_password, stored_hash):
+                    user["password_hash"] = self._hash_password(self.default_password)
+                    changed = True
+                return changed
+
+        users.insert(0, self._build_default_user())
+        return True
+
     def _ensure_seeded(self) -> None:
+        users: list[dict[str, Any]] = []
         if self.storage_path.exists():
             try:
                 payload = json.loads(self.storage_path.read_text(encoding="utf-8"))
-                if payload.get("users"):
-                    return
+                users = list(payload.get("users", []))
             except (json.JSONDecodeError, OSError, AttributeError):
-                pass
+                users = []
 
-        default_user = {
-            "email": self.default_email,
-            "password_hash": self._hash_password(self.default_password),
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        }
-        self._save_users([default_user])
+        if self._ensure_default_user_record(users) or not self.storage_path.exists():
+            self._save_users(users)
 
     def _load_users(self) -> list[dict[str, Any]]:
         if not self.storage_path.exists():
@@ -68,7 +88,11 @@ class AdminAuthStore:
     def authenticate(self, email: str, password: str) -> str | None:
         normalized_email = email.strip().lower()
         with self._lock:
-            for user in self._load_users():
+            users = self._load_users()
+            if self._ensure_default_user_record(users):
+                self._save_users(users)
+
+            for user in users:
                 if user.get("email", "").lower() == normalized_email and self._verify_password(password, user.get("password_hash", "")):
                     token = secrets.token_urlsafe(32)
                     self._sessions[token] = {

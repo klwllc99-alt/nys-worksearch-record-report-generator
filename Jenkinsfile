@@ -14,6 +14,10 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '20'))
     }
 
+    triggers {
+        pollSCM('H/2 * * * *')
+    }
+
     environment {
         IMAGE_NAME = 'nys-worksearch-record-report-generator'
         CONTAINER_NAME = "nys-worksearch-record-generator-${env.BUILD_NUMBER}"

@@ -8,6 +8,7 @@ venv/
 node_modules/
 backend/data/
 headers.txt
+admin_login.json
 sample_*.csv
 *.zip
 *.pdf
