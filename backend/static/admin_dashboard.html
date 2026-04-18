@@ -162,6 +162,11 @@
           <div id="geoBreakdown"></div>
         </section>
 
+        <section class="panel">
+          <h2>Daily Rollups</h2>
+          <div id="dailyRollups"></div>
+        </section>
+
         <section class="panel" style="grid-column: 1 / -1;">
           <h2>Recent Requests</h2>
           <div id="recentRequests"></div>
@@ -266,6 +271,9 @@
         ['Avg Latency', summary.avg_duration_ms + ' ms'],
         ['P95 Latency', summary.p95_duration_ms + ' ms'],
         ['Max Latency', summary.max_duration_ms + ' ms'],
+        ['Storage', summary.storage_mode],
+        ['Retention', summary.retention_days + ' days'],
+        ['Stored Days', summary.retained_days],
         ['Uptime', summary.uptime_seconds + ' s'],
       ];
       document.getElementById('summaryCards').innerHTML = items.map(([label, value]) => `
@@ -364,6 +372,12 @@
         { key: 'country', label: 'Country' },
         { key: 'region', label: 'Region' },
         { key: 'count', label: 'Count' },
+      ]);
+      renderBreakdown('dailyRollups', summary.daily_totals, [
+        { key: 'date', label: 'Date' },
+        { key: 'count', label: 'Requests' },
+        { key: 'avg_duration_ms', label: 'Avg ms' },
+        { key: 'max_duration_ms', label: 'Max ms' },
       ]);
       renderRecent(summary.recent_requests);
     }

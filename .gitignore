@@ -10,6 +10,11 @@ backend/data/
 headers.txt
 admin_login.json
 jenkins-job-config.xml
+.env
+.env.*
+!.env.example
+deployment/*.rendered.yaml
+*.secrets.json
 sample_*.csv
 *.zip
 *.pdf
