@@ -31,7 +31,7 @@ This project is prepared to run behind Cloudflare and on Google Cloud Run.
    - Secret Manager
    - Cloud Build
 3. Create the two admin secrets in Secret Manager.
-4. Build and deploy the container with [deploy-cloud-run.ps1](deploy-cloud-run.ps1).
+4. Build and deploy the container with [deploy-cloud-run.ps1](deploy-cloud-run.ps1). The script auto-detects the Google CLI, enables required services, and prepares Artifact Registry.
 5. Point the Cloudflare DNS record at the Cloud Run URL.
 6. Add a Cloudflare Access app for the admin routes.
 
