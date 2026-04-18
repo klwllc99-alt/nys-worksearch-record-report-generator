@@ -16,7 +16,7 @@ from openpyxl import Workbook
 from pydantic import BaseModel
 
 from admin_auth import AdminAuthStore
-from metrics import MetricsStore
+from metrics import build_metrics_store
 from parser import WorkSearchEntry, parse_work_search_file
 from pdf_generator import ClaimantInfo, build_blank_form_pdf, create_output_document
 
@@ -32,7 +32,17 @@ LEGACY_ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "local-support-token").strip()
 DEFAULT_ADMIN_EMAIL = os.getenv("DEFAULT_ADMIN_EMAIL", "klwllc99@gmail.com").strip().lower()
 DEFAULT_ADMIN_PASSWORD = os.getenv("DEFAULT_ADMIN_PASSWORD", "99klwllc").strip()
 ADMIN_USERS_FILE = DATA_DIR / "admin_users.json"
-metrics_store = MetricsStore(max_events=int(os.getenv("METRICS_MAX_EVENTS", "2000")))
+METRICS_RETENTION_DAYS = int(os.getenv("METRICS_RETENTION_DAYS", "30"))
+METRICS_ROLLUP_FILE = os.getenv("METRICS_ROLLUP_FILE", str(DATA_DIR / "metrics_rollup.json")).strip()
+METRICS_STORAGE_BACKEND = os.getenv("METRICS_STORAGE_BACKEND", "local").strip().lower()
+FIRESTORE_METRICS_COLLECTION = os.getenv("FIRESTORE_METRICS_COLLECTION", "nys_ws5_metrics_daily").strip()
+metrics_store = build_metrics_store(
+    max_events=int(os.getenv("METRICS_MAX_EVENTS", "2000")),
+    retention_days=METRICS_RETENTION_DAYS,
+    persist_path=METRICS_ROLLUP_FILE or None,
+    storage_backend=METRICS_STORAGE_BACKEND,
+    firestore_collection=FIRESTORE_METRICS_COLLECTION,
+)
 auth_store = AdminAuthStore(
     storage_path=ADMIN_USERS_FILE,
     default_email=DEFAULT_ADMIN_EMAIL,

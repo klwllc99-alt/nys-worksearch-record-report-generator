@@ -10,6 +10,9 @@ services:
       DEFAULT_ADMIN_EMAIL: klwllc99@gmail.com
       DEFAULT_ADMIN_PASSWORD: 99klwllc
       METRICS_MAX_EVENTS: "5000"
+      METRICS_RETENTION_DAYS: "30"
+      METRICS_STORAGE_BACKEND: local
+      METRICS_ROLLUP_FILE: /app/data/metrics_rollup.json
     command: uvicorn main:app --host 0.0.0.0 --port 8080 --reload
     volumes:
       - ./backend:/app
