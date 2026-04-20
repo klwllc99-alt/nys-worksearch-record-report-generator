@@ -15,7 +15,14 @@ $ErrorActionPreference = 'Stop'
 function Get-GCloudPath {
     $command = Get-Command gcloud -ErrorAction SilentlyContinue
     if ($command) {
-        return $command.Source
+        $resolved = $command.Source
+        if ($resolved -and $resolved.ToLower().EndsWith('.ps1')) {
+            $cmdCandidate = [System.IO.Path]::ChangeExtension($resolved, '.cmd')
+            if (Test-Path $cmdCandidate) {
+                return $cmdCandidate
+            }
+        }
+        return $resolved
     }
 
     $candidates = @(
@@ -51,9 +58,16 @@ Write-Host "Enabling required Google Cloud services..."
 & $gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com firestore.googleapis.com secretmanager.googleapis.com --project $ProjectId
 
 Write-Host "Ensuring Artifact Registry repository exists..."
-& $gcloud artifacts repositories describe $Repository --location $Region --project $ProjectId *> $null
+$existingRepositories = & $gcloud artifacts repositories list --location $Region --project $ProjectId --format="value(name)"
 if ($LASTEXITCODE -ne 0) {
+    throw "Failed to list Artifact Registry repositories."
+}
+$repositoryExists = @($existingRepositories | ForEach-Object { $_.ToString().Trim() }) -contains $Repository
+if (-not $repositoryExists) {
     & $gcloud artifacts repositories create $Repository --repository-format=docker --location $Region --description="Docker images for $ServiceName" --project $ProjectId
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to create Artifact Registry repository '$Repository'."
+    }
 }
 
 Write-Host "Configuring Docker auth for Artifact Registry..."
@@ -61,6 +75,9 @@ Write-Host "Configuring Docker auth for Artifact Registry..."
 
 Write-Host "Building and pushing container image: $image"
 & $gcloud builds submit "$PSScriptRoot/backend" --tag $image --project $ProjectId
+if ($LASTEXITCODE -ne 0) {
+    throw "Container build failed for image '$image'."
+}
 
 Write-Host "Rendering Cloud Run manifest..."
 $manifest = Get-Content (Join-Path $PSScriptRoot 'cloud-run-service.yaml') -Raw
@@ -72,6 +89,9 @@ Set-Content -Path $renderedManifest -Value $manifest -Encoding UTF8
 
 Write-Host "Deploying Cloud Run service..."
 & $gcloud run services replace $renderedManifest --region $Region --project $ProjectId
+if ($LASTEXITCODE -ne 0) {
+    throw "Cloud Run deployment failed for service '$ServiceName'."
+}
 
 Write-Host ''
 Write-Host 'Deployment submitted successfully.'

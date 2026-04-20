@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NYS Work Search Record Report Generator Help</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #020617;
+      --card: rgba(15, 23, 42, 0.94);
+      --border: #1e293b;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #60a5fa;
+      --accent2: #22c55e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Segoe UI, Arial, sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at top, #0f172a, var(--bg));
+    }
+    .wrap {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    .hero, .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+      margin-bottom: 18px;
+    }
+    h1, h2, h3 { margin-top: 0; }
+    p, li { color: var(--muted); line-height: 1.55; }
+    ul, ol { padding-left: 20px; }
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .links a {
+      color: #dbeafe;
+      text-decoration: none;
+      border: 1px solid #334155;
+      padding: 9px 12px;
+      border-radius: 10px;
+      background: #0b1220;
+    }
+    .grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+    .tip {
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(15, 118, 110, 0.18);
+      border: 1px solid rgba(45, 212, 191, 0.3);
+      color: #ccfbf1;
+    }
+    .small { font-size: 0.92rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <h1>Help and user guide</h1>
+      <p>This app converts work-search records from a CSV or XLSX file into a WS5-ready PDF. You can review, correct, sort, preview, and then download your final output.</p>
+      <div class="links">
+        <a href="/">Back to app</a>
+        <a href="/api/template/csv">Download CSV template</a>
+        <a href="/api/template/xlsx">Download XLSX template</a>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Quick start</h2>
+      <ol>
+        <li>Download the template if you need a starter file.</li>
+        <li>Upload a CSV or XLSX file, or drag and drop it into the app.</li>
+        <li>Review the editable grid and fix any rows.</li>
+        <li>Enter optional claimant details like name, NYS ID, and SSN last 4.</li>
+        <li>Choose whether you want one merged PDF or a ZIP with one PDF per week.</li>
+        <li>Preview the result, then generate your download.</li>
+      </ol>
+    </section>
+
+    <section class="card">
+      <h2>Main features</h2>
+      <div class="grid">
+        <div>
+          <h3>File import</h3>
+          <p>Supports both CSV and XLSX uploads. The app parses your rows and loads them into the grid automatically.</p>
+        </div>
+        <div>
+          <h3>Editable record grid</h3>
+          <p>Every row can be corrected inline. You can also add new rows, clear data, or sort by column.</p>
+        </div>
+        <div>
+          <h3>Clipboard paste</h3>
+          <p>Paste spreadsheet rows directly if copying from Excel, Google Sheets, or another table.</p>
+        </div>
+        <div>
+          <h3>PDF preview</h3>
+          <p>Render a preview before final download so you can confirm the information looks right.</p>
+        </div>
+        <div>
+          <h3>Overflow handling</h3>
+          <p>Enable the option to generate all activities when your work-search history extends beyond the first WS5 page.</p>
+        </div>
+        <div>
+          <h3>Admin dashboard</h3>
+          <p>The admin area includes login, user management, and request metrics for monitoring app activity.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Record types explained</h2>
+      <ul>
+        <li><strong>employer_contact</strong>: Use for job applications, calls, emails, interviews, and employer outreach.</li>
+        <li><strong>other_activity</strong>: Use for workshops, career center visits, resume updates, and similar search activities.</li>
+      </ul>
+      <p class="small">Make sure each row has a valid date and enough detail to describe the work-search action clearly.</p>
+    </section>
+
+    <section class="card">
+      <h2>Troubleshooting tips</h2>
+      <ul>
+        <li>If the upload is rejected, confirm the file has the expected columns and valid dates.</li>
+        <li>If clipboard paste is blocked by the browser, click the paste box and use Ctrl+V manually.</li>
+        <li>If your output spans multiple weeks, choose the per-week ZIP mode for separate files.</li>
+        <li>If there are more activities than fit on one form, turn on the overflow generation option.</li>
+      </ul>
+      <div class="tip">Tip: Use this help page as the main quick-reference guide for staff or claimants.</div>
+    </section>
+  </div>
+</body>
+</html>
