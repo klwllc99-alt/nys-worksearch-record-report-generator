@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NYS Work Search Form Generator</title>
+  <title>NYS Work Search Record Report Generator</title>
   <style>
     :root {
       color-scheme: dark;
@@ -30,7 +30,10 @@
       padding: 20px;
       box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
     }
-    .hero { margin-bottom: 18px; }
+    .hero {
+      margin-bottom: 18px;
+      position: relative;
+    }
     h1, h2, h3 { margin-top: 0; }
     p { color: var(--muted); }
     .grid { display: grid; gap: 16px; }
@@ -68,6 +71,32 @@
       padding: 8px 10px;
       border-radius: 10px;
       background: #0b1220;
+    }
+    .helpLink {
+      position: absolute;
+      top: 18px;
+      right: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #dbeafe;
+      text-decoration: none;
+      border: 1px solid #334155;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #0b1220;
+      font-weight: 700;
+    }
+    .helpBadge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      color: white;
+      font-size: 0.95rem;
     }
     .dropzone {
       border: 2px dashed #475569;
@@ -305,7 +334,8 @@
 <body>
   <div class="wrap">
     <section class="hero">
-      <h1>NYS Work Search Record Generator</h1>
+      <a class="helpLink" href="/help"><span class="helpBadge">?</span><span>Help</span></a>
+      <h1>NYS Work Search Record Report Generator</h1>
       <p>Select or drop a CSV or XLSX file and it will load into the editor automatically. You can then correct rows inline, paste from the clipboard, or add entries manually before generating the WS5 form. The grid labels now mirror the official WS5 wording.</p>
       <p class="small"><strong>Privacy notice:</strong> This application does not collect, store, or transmit personal data beyond the active request. Processing is done in memory for generation.</p>
       <div class="links">

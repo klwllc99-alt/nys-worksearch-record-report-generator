@@ -27,6 +27,7 @@ CSV_TEMPLATE_PATH = STATIC_DIR / "ws5_template.csv"
 ROOT_WS5_PATH = BASE_DIR.parent / "WS5.pdf"
 BLANK_FORM_PATH = STATIC_DIR / "ws5_blank.pdf" if (STATIC_DIR / "ws5_blank.pdf").exists() else ROOT_WS5_PATH
 APP_PAGE_PATH = STATIC_DIR / "index.html"
+HELP_PAGE_PATH = STATIC_DIR / "help.html"
 ADMIN_DASHBOARD_PATH = STATIC_DIR / "admin_dashboard.html"
 LEGACY_ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "local-support-token").strip()
 DEFAULT_ADMIN_EMAIL = os.getenv("DEFAULT_ADMIN_EMAIL", "klwllc99@gmail.com").strip().lower()
@@ -60,9 +61,9 @@ raw_origins = os.getenv("ALLOWED_ORIGINS", "")
 allowed_origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()] or DEFAULT_ORIGINS
 
 app = FastAPI(
-    title="NYS Work Search Record PDF Generator",
+    title="NYS Work Search Record Report Generator",
     version="0.1.0",
-    description="Generate WS5-compatible PDFs from CSV/XLSX uploads.",
+    description="Generate WS5-compatible PDF reports from CSV/XLSX uploads.",
 )
 
 app.add_middleware(
@@ -194,6 +195,11 @@ async def capture_request_metrics(request: Request, call_next):
 @app.get("/")
 def root():
     return FileResponse(APP_PAGE_PATH, media_type="text/html")
+
+
+@app.get("/help")
+def help_page():
+    return FileResponse(HELP_PAGE_PATH, media_type="text/html")
 
 
 @app.get("/api")

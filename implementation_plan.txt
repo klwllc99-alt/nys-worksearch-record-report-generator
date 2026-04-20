@@ -1,4 +1,4 @@
-# NYS Work Search Record (WS5) PDF Generator — Revised Plan
+# NYS Work Search Record Report Generator — Revised Plan
 
 Build a fully stateless web application that accepts a spreadsheet upload (.xlsx/.csv), collects user metadata, and fills in an official blank WS5 PDF form — either one per week (ZIP) or as a single continuous PDF.
 
